@@ -13,6 +13,10 @@ class HomePageWidget extends StatefulWidget {
 }
 
 class _HomePageWidgetState extends State<HomePageWidget> {
+  PagingController<DocumentSnapshot?, DepartmentsRecord>? _pagingController;
+  Query? _pagingQuery;
+  List<StreamSubscription?> _streamSubscriptions = [];
+
   PagingController<DocumentSnapshot?, UsersRecord>? _pagingController;
   Query? _pagingQuery;
   List<StreamSubscription?> _streamSubscriptions = [];
@@ -22,6 +26,7 @@ class _HomePageWidgetState extends State<HomePageWidget> {
 
   @override
   void dispose() {
+    _streamSubscriptions.forEach((s) => s?.cancel());
     _streamSubscriptions.forEach((s) => s?.cancel());
     _unfocusNode.dispose();
     super.dispose();
@@ -247,94 +252,179 @@ class _HomePageWidgetState extends State<HomePageWidget> {
                                 },
                               ),
                             ),
-                            ListView(
+                            PagedListView<DocumentSnapshot<Object?>?,
+                                DepartmentsRecord>(
+                              pagingController: () {
+                                final Query<Object?> Function(Query<Object?>)
+                                    queryBuilder =
+                                    (departmentsRecord) => departmentsRecord;
+                                if (_pagingController != null) {
+                                  final query = queryBuilder(
+                                      DepartmentsRecord.collection);
+                                  if (query != _pagingQuery) {
+                                    // The query has changed
+                                    _pagingQuery = query;
+                                    _streamSubscriptions
+                                        .forEach((s) => s?.cancel());
+                                    _streamSubscriptions.clear();
+                                    _pagingController!.refresh();
+                                  }
+                                  return _pagingController!;
+                                }
+
+                                _pagingController =
+                                    PagingController(firstPageKey: null);
+                                _pagingQuery =
+                                    queryBuilder(DepartmentsRecord.collection);
+                                _pagingController!
+                                    .addPageRequestListener((nextPageMarker) {
+                                  queryDepartmentsRecordPage(
+                                    queryBuilder: (departmentsRecord) =>
+                                        departmentsRecord,
+                                    nextPageMarker: nextPageMarker,
+                                    pageSize: 25,
+                                    isStream: true,
+                                  ).then((page) {
+                                    _pagingController!.appendPage(
+                                      page.data,
+                                      page.nextPageMarker,
+                                    );
+                                    final streamSubscription =
+                                        page.dataStream?.listen((data) {
+                                      final itemIndexes = _pagingController!
+                                          .itemList!
+                                          .asMap()
+                                          .map((k, v) =>
+                                              MapEntry(v.reference.id, k));
+                                      data.forEach((item) {
+                                        final index =
+                                            itemIndexes[item.reference.id];
+                                        final items =
+                                            _pagingController!.itemList!;
+                                        if (index != null) {
+                                          items.replaceRange(
+                                              index, index + 1, [item]);
+                                          _pagingController!.itemList = {
+                                            for (var item in items)
+                                              item.reference: item
+                                          }.values.toList();
+                                        }
+                                      });
+                                      setState(() {});
+                                    });
+                                    _streamSubscriptions
+                                        .add(streamSubscription);
+                                  });
+                                });
+                                return _pagingController!;
+                              }(),
                               padding: EdgeInsets.zero,
                               scrollDirection: Axis.vertical,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      8, 8, 8, 8),
-                                  child: Card(
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    color: Color(0xFFF5F5F5),
-                                    child: Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(
-                                          3, 3, 3, 3),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: [
-                                          Padding(
-                                            padding:
-                                                EdgeInsetsDirectional.fromSTEB(
-                                                    0, 2, 0, 4),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.max,
-                                              children: [
-                                                Text(
-                                                  'Name:- ',
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyText1,
-                                                ),
-                                                Text(
-                                                  'Hello World',
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyText1,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding:
-                                                EdgeInsetsDirectional.fromSTEB(
-                                                    0, 2, 0, 4),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.max,
-                                              children: [
-                                                Text(
-                                                  'Manager Name:- ',
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyText1,
-                                                ),
-                                                Text(
-                                                  'Hello World',
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyText1,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding:
-                                                EdgeInsetsDirectional.fromSTEB(
-                                                    0, 2, 0, 4),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.max,
-                                              children: [
-                                                Text(
-                                                  'Number of Employee:- ',
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyText1,
-                                                ),
-                                                Text(
-                                                  'Hello World',
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyText1,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                              builderDelegate:
+                                  PagedChildBuilderDelegate<DepartmentsRecord>(
+                                // Customize what your widget looks like when it's loading the first page.
+                                firstPageProgressIndicatorBuilder: (_) =>
+                                    Center(
+                                  child: SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: CircularProgressIndicator(
+                                      color: FlutterFlowTheme.of(context)
+                                          .primaryColor,
                                     ),
                                   ),
                                 ),
-                              ],
+
+                                itemBuilder: (context, _, listViewIndex) {
+                                  final listViewDepartmentsRecord =
+                                      _pagingController!
+                                          .itemList![listViewIndex];
+                                  return Padding(
+                                    padding: EdgeInsetsDirectional.fromSTEB(
+                                        8, 8, 8, 8),
+                                    child: Card(
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      color: Color(0xFFF5F5F5),
+                                      child: Padding(
+                                        padding: EdgeInsetsDirectional.fromSTEB(
+                                            3, 3, 3, 3),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.max,
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsetsDirectional
+                                                  .fromSTEB(0, 2, 0, 4),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.max,
+                                                children: [
+                                                  Text(
+                                                    'Name:- ',
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyText1,
+                                                  ),
+                                                  Text(
+                                                    listViewDepartmentsRecord
+                                                        .name!,
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyText1,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsetsDirectional
+                                                  .fromSTEB(0, 2, 0, 4),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.max,
+                                                children: [
+                                                  Text(
+                                                    'Manager Name:- ',
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyText1,
+                                                  ),
+                                                  Text(
+                                                    listViewDepartmentsRecord
+                                                        .managerName!,
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyText1,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsetsDirectional
+                                                  .fromSTEB(0, 2, 0, 4),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.max,
+                                                children: [
+                                                  Text(
+                                                    'Number of Employee:- ',
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyText1,
+                                                  ),
+                                                  Text(
+                                                    listViewDepartmentsRecord
+                                                        .numberOfEmployee!
+                                                        .toString(),
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyText1,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ],
                         ),
