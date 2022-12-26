@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "285660813309",
+    "project_id": "infinite-scroll-test-367b1",
+    "storage_bucket": "infinite-scroll-test-367b1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:285660813309:android:1c7e029c3fa0a6f9e9eb94",
+        "android_client_info": {
+          "package_name": "com.mycompany.infinitescrolltest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "285660813309-86sh1r8tic016j6qdb1dbso4866lj2f7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.infinitescrolltest",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "285660813309-t6bn653p95iu1ctmtd3v27c1od6o0j3j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIHzEpFKqiF4xj--1uWTb7-Td4cj6mhYA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "285660813309-t6bn653p95iu1ctmtd3v27c1od6o0j3j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "285660813309-mq5k9k1bpal7c66ph5h7i5ivn9lb4qou.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.infinitescrolltest"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
